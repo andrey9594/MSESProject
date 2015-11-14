@@ -4,6 +4,11 @@ public class Data {
 	private int year;
 	private int age;
 	
+	public Data(int year, int age) {
+		this.year = year;
+		this.age = age;
+	}
+	
 	/**
 	 * get
 	 * @return year
