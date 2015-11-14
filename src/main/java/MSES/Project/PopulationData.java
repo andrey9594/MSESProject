@@ -4,8 +4,8 @@ package MSES.Project;
  * Class for collection data about population from data files
  */
 public class PopulationData extends Data {
-	private int female;
-	private int male;
+	private double female;
+	private double male;
 	
 	/**
 	 * Main constructor
@@ -14,7 +14,7 @@ public class PopulationData extends Data {
 	 * @param female Total female
 	 * @param male Total male
 	 */
-	public PopulationData(int year, int age, int female, int male) {
+	public PopulationData(int year, int age, double female, double male) {
 		super(year, age);
 		this.female = female;
 		this.male = male;
@@ -24,7 +24,7 @@ public class PopulationData extends Data {
 	 * get
 	 * @return female
 	 */
-	public int getFemale() {
+	public double getFemale() {
 		return female;
 	}
 	
@@ -32,7 +32,7 @@ public class PopulationData extends Data {
 	 * set
 	 * @param female set the female new value
 	 */
-	public void setFemale(int female) {
+	public void setFemale(double female) {
 		this.female = female;
 	}
 	
@@ -40,7 +40,7 @@ public class PopulationData extends Data {
 	 * get
 	 * @return male
 	 */
-	public int getMale() {
+	public double getMale() {
 		return male;
 	}
 	
@@ -48,7 +48,7 @@ public class PopulationData extends Data {
 	 * set
 	 * @param male set the male new value
 	 */
-	public void setMale(int male) {
+	public void setMale(double male) {
 		this.male = male;
 	}
 
