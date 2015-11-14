@@ -27,7 +27,7 @@ public abstract class Data {
 	
 	/**
 	 * set
-	 * @param year set new year value
+	 * @param year set the year new value
 	 */
 	public void setYear(int year) {
 		this.year = year;
@@ -43,7 +43,7 @@ public abstract class Data {
 	
 	/**
 	 * set
-	 * @param age set new age value
+	 * @param age set the age new value
 	 */
 	public void setAge(int age) {
 		this.age = age;
