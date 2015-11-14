@@ -6,6 +6,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Scanner;
 
+import javax.print.DocFlavor.STRING;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,8 +37,15 @@ public class DeathDataReader extends DataReader {
 				age = Integer.parseInt(nextAge.substring(0, 3));
 			else
 				age = Integer.parseInt(nextAge);
-			double fqx = Double.parseDouble(scanner.next());
-			double mqx = Double.parseDouble(scanner.next());
+			double fqx = 0;
+			String fqxString = scanner.next();
+			if (!fqxString.equals("."))
+				fqx = Double.parseDouble(fqxString);
+			
+			double mqx = 0;
+			String mqxString = scanner.next();
+			if (!mqxString.equals("."))
+				mqx = Double.parseDouble(mqxString);
 			scanner.next(); // we don't need the total parameter
 			return new DeathData(year, age, fqx, mqx);
 		} catch(Exception e) {
