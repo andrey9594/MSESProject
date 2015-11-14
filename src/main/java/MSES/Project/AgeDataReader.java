@@ -49,6 +49,7 @@ public class AgeDataReader extends DataReader {
 	public void close() {
 		if (scanner != null) {
 			scanner.close();
+			log.info("Scanner has successfully closed");
 		}
 	}
 }

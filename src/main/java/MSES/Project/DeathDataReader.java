@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DeathDataReader extends DataReader {
-	private static final Logger log = LoggerFactory.getLogger(DataReader.class);
+	private static final Logger log = LoggerFactory.getLogger(DeathDataReader.class);
 
 	private final Scanner scanner;
 
@@ -58,6 +58,7 @@ public class DeathDataReader extends DataReader {
 	public void close() {
 		if (scanner != null) {
 			scanner.close();
+			log.info("Scanner has successfully closed");
 		}
 	}
 
