@@ -1,6 +1,4 @@
-Italy, Death rates (period 1x1)     Last modified: 24-Oct-2012, MPv5 (May07)
-
-   Year      Age       Female       Male         Total
+﻿Year      Age       Female       Male         Total
    1872        0     0.262955     0.293463     0.278519 
    1872        1     0.136145     0.138152     0.137160 
    1872        2     0.093066     0.093273     0.093172 
