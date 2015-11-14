@@ -37,6 +37,10 @@
   <logger name="MSES.Project.DeathDataReader" level="info" >
     <appender-ref ref="sout" />
   </logger>
+        <!-- Логгер нашего класса  -->
+  <logger name="MSES.Project.FertilityDataReader" level="info" >
+    <appender-ref ref="sout" />
+  </logger>
   <consolePlugin />
   
 </configuration>
