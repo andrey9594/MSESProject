@@ -9,33 +9,24 @@ import Jama.Matrix;
 
 /**
  * The Main method to launch our program.
- *
  */
 public class Main {
 	private static final Logger log = LoggerFactory.getLogger(Main.class);
 	
 	/**
-	 * Consider ages groups from 0 years to
-	 * @param MAX_AGE
-	 * years old
+	 * Consider ages groups from 0 years to MAX_AGE years old
 	 */
 	private static final int MAX_AGE = 105;
 
 	/**
-	 * In our archive we have data for years from
-	 * @param YEAR_SINCE
-	 * to
-	 * @param YEAR_TO
+	 * In our archive we have data for years from YEAR_SINCE to YEAR_TO
 	 */
 	private static final int YEAR_SINCE = 1900;
 	private static final int YEAR_TO = 2010;
 	private static final int YEARS_COUNT = YEAR_TO - YEAR_SINCE + 1;
 	
 	/**
-	 * We will predict population from 
-	 * @param YEAR_PREDICT_SINCE
-	 * to
-	 * @param YEAR_PREDICT_TO
+	 * We will predict population from YEAR_PREDICT_SINCE to YEAR_PREDICT_TO
 	 */
 	private static final int YEAR_PREDICT_SINCE = 2003;
 	private static final int YEAR_PREDICT_TO = 2010;
@@ -43,6 +34,7 @@ public class Main {
 	
 	private static final String POPULATION_FILE_NAME = "Population.txt";
 	private static final String DEATH_RATES_FILE_NAME = "Death_rates.txt";
+	private static final String FERTILITY_FILE_NAME = "Fertility.txt";
 	
 	private static int getTotalPopulation(int year, Matrix nf[], Matrix nm[]) {
 		double sum = 0;
@@ -124,8 +116,51 @@ public class Main {
 				deathDataReader.close();
 		}
 		
+		/**
+		 * fFertality is the ages distribution vector
+		 * of fertility for each age
+		 * for female
+		 */
+		Matrix fFertility[] = new Matrix[YEARS_COUNT];
+		FertilityDataReader fertilityDataReader = null;
+		try {
+			fertilityDataReader = new FertilityDataReader(FERTILITY_FILE_NAME);
+			FertilityData fertilityData = null;
+			while ((fertilityData = fertilityDataReader.getNext()) != null) {
+				int currentYear = fertilityData.getYear();
+				if (currentYear >= YEAR_SINCE && currentYear <= YEAR_TO) {
+					int currentAge = fertilityData.getAge();
+					if (fFertility[currentYear - YEAR_SINCE] == null) {
+						fFertility[currentYear - YEAR_SINCE] = new Matrix(MAX_AGE + 1, 1); // 0, 1, ..., MAX_AGE <=> n + 1 values
+					} 
+					if (currentAge <= MAX_AGE) {
+						fFertility[currentYear - YEAR_SINCE].set(currentAge, 0, fertilityData.getASFR());
+					}
+				}
+			}
+		} catch(IOException e) {
+			log.error("Can't read from the file!", e);
+			e.printStackTrace();
+			return;
+		} finally {
+			if (fertilityDataReader != null)
+				fertilityDataReader.close();
+		}
+		
 		// constant Lesli matrix
+		Matrix Lf = new Matrix(MAX_AGE + 1, MAX_AGE + 1);
+		Matrix Lm = new Matrix(MAX_AGE + 1, MAX_AGE + 1);
+		for (int j = 0; j <= MAX_AGE; j++) {
+			//Lf.set(0, j, !!!); // 
+			//Lm.set(0, j, !!!); //
+		}
+		for (int i = 1; i <= MAX_AGE; i++) {
+			Lf.set(i, i - 1, 1 - fqx[YEAR_PREDICT_SINCE - YEAR_SINCE].get(i - 1, 0));
+			Lm.set(i, i - 1, 1 - mqx[YEAR_PREDICT_SINCE - YEAR_SINCE].get(i - 1, 0));
+		}
+		
 		Matrix nfCurrent = nf[YEAR_PREDICT_SINCE - YEAR_SINCE].copy();
+		Matrix nmCurrent = nm[YEAR_PREDICT_SINCE - YEAR_SINCE].copy();
 		for (int currentYear = YEAR_PREDICT_SINCE; currentYear < YEAR_PREDICT_TO; currentYear++) {
 			
 		}
