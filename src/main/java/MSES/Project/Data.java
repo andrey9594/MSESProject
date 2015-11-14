@@ -1,9 +1,17 @@
 package MSES.Project;
 
-public class Data {
+/**
+ * Class for collection all data from data files
+ */
+public abstract class Data {
 	private int year;
 	private int age;
 	
+	/**
+	 * Main constructor
+	 * @param year year
+	 * @param age age
+	 */
 	public Data(int year, int age) {
 		this.year = year;
 		this.age = age;
@@ -19,7 +27,7 @@ public class Data {
 	
 	/**
 	 * set
-	 * @param year set year
+	 * @param year set new year value
 	 */
 	public void setYear(int year) {
 		this.year = year;
@@ -35,7 +43,7 @@ public class Data {
 	
 	/**
 	 * set
-	 * @param age set age
+	 * @param age set new age value
 	 */
 	public void setAge(int age) {
 		this.age = age;
