@@ -9,6 +9,8 @@ import java.util.Scanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import Jama.Matrix;
+
 public class FertilityDataReader extends DataReader {
 private static final Logger log = LoggerFactory.getLogger(FertilityDataReader.class);
 	
@@ -19,9 +21,25 @@ private static final Logger log = LoggerFactory.getLogger(FertilityDataReader.cl
 		scanner = new Scanner(Files.newInputStream(path));
 		scanner.nextLine(); // it's the unused service head information
 	}
-	
+
 	@Override
-	public FertilityData getNext() {
+	void getAllData(int yearSince, int yearTo, int maxAge, Matrix[] fFertility, Matrix[] empty) {
+		FertilityData fertilityData = null;
+		while ((fertilityData = getNext()) != null) {
+			int currentYear = fertilityData.getYear();
+			if (currentYear >= yearSince && currentYear <= yearTo) {
+				int currentAge = fertilityData.getAge();
+				if (fFertility[currentYear - yearSince] == null) {
+					fFertility[currentYear - yearSince] = new Matrix(maxAge + 1, 1); // 0, 1, ..., MAX_AGE <=> n + 1 values
+				} 
+				if (currentAge <= maxAge) {
+					fFertility[currentYear - yearSince].set(currentAge, 0, fertilityData.getASFR());
+				}
+			}
+		}		
+	}
+	
+	private FertilityData getNext() {
 		try {
 			int year = Integer.parseInt(scanner.next().substring(0, 4)); // some year with the plus symbol at the end
 			/**

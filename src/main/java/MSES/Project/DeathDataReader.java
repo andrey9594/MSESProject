@@ -6,10 +6,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Scanner;
 
-import javax.print.DocFlavor.STRING;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import Jama.Matrix;
 
 public class DeathDataReader extends DataReader {
 	private static final Logger log = LoggerFactory.getLogger(DeathDataReader.class);
@@ -21,9 +21,27 @@ public class DeathDataReader extends DataReader {
 		scanner = new Scanner(Files.newInputStream(path));
 		scanner.nextLine(); // it's the unused service head information
 	}
-	
+
 	@Override
-	public DeathData getNext() {
+	void getAllData(int yearSince, int yearTo, int maxAge, Matrix[] fqx, Matrix[] mqx) {
+		DeathData deathData = null;
+		while ((deathData = getNext()) != null) {
+			int currentYear = deathData.getYear();
+			if (currentYear >= yearSince && currentYear <= yearTo) {
+				int currentAge = deathData.getAge();
+				if (currentAge == 0) {
+					fqx[currentYear - yearSince] = new Matrix(maxAge + 1, 1); // 0, 1, ..., MAX_AGE <=> n + 1 values
+					mqx[currentYear - yearSince] = new Matrix(maxAge + 1, 1); // -//-
+				} 
+				if (currentAge <= maxAge) {
+					fqx[currentYear - yearSince].set(currentAge, 0, deathData.getFqx());
+					mqx[currentYear - yearSince].set(currentAge, 0, deathData.getMqx());
+				}
+			}
+		}	
+	}
+	
+	private DeathData getNext() {
 		try {
 			int year = Integer.parseInt(scanner.next().substring(0, 4)); // some year with the plus symbol at the end
 			/**
@@ -61,5 +79,4 @@ public class DeathDataReader extends DataReader {
 			log.info("Scanner has successfully closed");
 		}
 	}
-
 }

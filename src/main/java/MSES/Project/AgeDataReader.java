@@ -9,6 +9,8 @@ import java.util.Scanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import Jama.Matrix;
+
 public class AgeDataReader extends DataReader {
 	private static final Logger log = LoggerFactory.getLogger(AgeDataReader.class);
 	
@@ -21,7 +23,25 @@ public class AgeDataReader extends DataReader {
 	}
 	
 	@Override
-	public PopulationData getNext() {
+	void getAllData(int yearSince, int yearTo, int maxAge, Matrix[] nf, Matrix[] nm) {
+		PopulationData currentPopulationData = null;
+		while ((currentPopulationData = getNext()) != null) {
+			int currentYear = currentPopulationData.getYear();
+			if (currentYear >= yearSince && currentYear <= yearTo) {
+				int currentAge = currentPopulationData.getAge();
+				if (currentAge == 0) {
+					nf[currentYear - yearSince] = new Matrix(maxAge + 1, 1); // 0, 1, ..., MAX_AGE <=> n + 1 values
+					nm[currentYear - yearSince] = new Matrix(maxAge + 1, 1); // -//-
+				} 
+				if (currentAge <= maxAge) {
+					nf[currentYear - yearSince].set(currentAge, 0, currentPopulationData.getFemale());
+					nm[currentYear - yearSince].set(currentAge, 0, currentPopulationData.getMale());
+				}
+			}
+		}
+	}
+	
+	private PopulationData getNext() {
 		try {
 			int year = Integer.parseInt(scanner.next().substring(0, 4)); // some year with the plus symbol at the end
 			/**
