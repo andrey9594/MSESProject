@@ -39,7 +39,7 @@ public class Main {
 	
 	/** We will predict population from YEAR_PREDICT_SINCE to YEAR_PREDICT_TO */
 	private static final int YEAR_PREDICT_SINCE = 2000;
-	private static final int YEAR_PREDICT_TO = 2001;
+	private static final int YEAR_PREDICT_TO = 2010;
 	
 	private static int getTotalPopulation(Matrix nf, Matrix nm) {
 		double sum = 0;
@@ -62,26 +62,47 @@ public class Main {
 	
 	
 	private static double predictFertilityForAgeLMA(Matrix [] fFertility, int age, int year) {
-		final int yearSince = 1956;
-		year = 2009;
+		final int yearSince = 1990;
 		int yearCount = year - yearSince + 1;
 		double y[] = new double[yearCount];
-		
-		debug.println(age);
+		//debug.println(age);
 		for (int i = 0; i < yearCount; i++) {
 			y[i] = fFertility[yearSince + i].get(age, 0);
-			debug.print(y[i] + " ");
+//			debug.print(y[i] + " ");
 		}		
 		
-		int n = 10;
-		//int l = 
-		debug.println();// y_{t+1}
-		return 0.0;
+		int n = 5;
+		int l = year - (yearSince + n - 1) + 1;
+		Matrix F = new Matrix(l, n);
+		for (int j = 0; j < n; j++) {
+			int currentYear = year - j;
+			for (int i = 0; i < l; i++) {
+				F.set(i, j, fFertility[currentYear--].get(age, 0));
+				//debug.print(F.get(i, j) + " ");
+			}
+			//debug.println();
+		}
+		
+		Matrix Y = new Matrix(l, 1);
+		for (int i = 0; i < l; i++)
+			Y.set(i, 0, fFertility[year - i].get(age, 0));
+		
+		Matrix W = (F.transpose().times(F)).inverse().times(F.transpose()).times(Y);
+		
+		double newY = 0;
+		for (int i = 0; i < n; i++)
+			newY += W.get(i, 0) * fFertility[year - i - 1].get(age, 0);
+		debug.print("age = " + age + ": last 3 = " + fFertility[year - 3].get(age, 0) + ", " +
+			 fFertility[year - 2].get(age, 0) + ", " + + fFertility[year - 1].get(age, 0) + ", ");
+		debug.printf("new y = %f", newY);// y_{t+1}
+		debug.print(", real y = " + fFertility[year].get(age, 0));// y_{t+1}
+		debug.printf(", error = %f\n", Math.abs(newY - fFertility[year].get(age, 0)));
+		return newY;
 	}
 	
 	private static Matrix getNewFertilityLMA(Matrix [] fFertility, int year) {
 		Matrix newFertility = fFertility[year].copy();
-		for (int currentAge = 12; currentAge <= Math.min(MAX_AGE, 60); currentAge++)
+		for (int currentAge = 16; currentAge <= Math.min(MAX_AGE, 50); currentAge++)
 			newFertility.set(currentAge, 0, predictFertilityForAgeLMA(fFertility, currentAge, year));
 		return newFertility;
 	}
