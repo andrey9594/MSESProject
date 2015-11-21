@@ -30,12 +30,12 @@ public class DeathDataReader extends DataReader {
 			if (currentYear >= yearSince && currentYear <= yearTo) {
 				int currentAge = deathData.getAge();
 				if (currentAge == 0) {
-					fqx[currentYear - yearSince] = new Matrix(maxAge + 1, 1); // 0, 1, ..., MAX_AGE <=> n + 1 values
-					mqx[currentYear - yearSince] = new Matrix(maxAge + 1, 1); // -//-
+					fqx[currentYear] = new Matrix(maxAge + 1, 1); // 0, 1, ..., MAX_AGE <=> n + 1 values
+					mqx[currentYear] = new Matrix(maxAge + 1, 1); // -//-
 				} 
 				if (currentAge <= maxAge) {
-					fqx[currentYear - yearSince].set(currentAge, 0, deathData.getFqx());
-					mqx[currentYear - yearSince].set(currentAge, 0, deathData.getMqx());
+					fqx[currentYear].set(currentAge, 0, deathData.getFqx());
+					mqx[currentYear].set(currentAge, 0, deathData.getMqx());
 				}
 			}
 		}	

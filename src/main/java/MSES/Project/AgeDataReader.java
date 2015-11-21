@@ -30,12 +30,12 @@ public class AgeDataReader extends DataReader {
 			if (currentYear >= yearSince && currentYear <= yearTo) {
 				int currentAge = currentPopulationData.getAge();
 				if (currentAge == 0) {
-					nf[currentYear - yearSince] = new Matrix(maxAge + 1, 1); // 0, 1, ..., MAX_AGE <=> n + 1 values
-					nm[currentYear - yearSince] = new Matrix(maxAge + 1, 1); // -//-
+					nf[currentYear] = new Matrix(maxAge + 1, 1); // 0, 1, ..., MAX_AGE <=> n + 1 values
+					nm[currentYear] = new Matrix(maxAge + 1, 1); // -//-
 				} 
 				if (currentAge <= maxAge) {
-					nf[currentYear - yearSince].set(currentAge, 0, currentPopulationData.getFemale());
-					nm[currentYear - yearSince].set(currentAge, 0, currentPopulationData.getMale());
+					nf[currentYear].set(currentAge, 0, currentPopulationData.getFemale());
+					nm[currentYear].set(currentAge, 0, currentPopulationData.getMale());
 				}
 			}
 		}

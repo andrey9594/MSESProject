@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import Jama.Matrix;
 
 public class FertilityDataReader extends DataReader {
-private static final Logger log = LoggerFactory.getLogger(FertilityDataReader.class);
+	private static final Logger log = LoggerFactory.getLogger(FertilityDataReader.class);
 	
 	private final Scanner scanner;
 	
@@ -29,11 +29,11 @@ private static final Logger log = LoggerFactory.getLogger(FertilityDataReader.cl
 			int currentYear = fertilityData.getYear();
 			if (currentYear >= yearSince && currentYear <= yearTo) {
 				int currentAge = fertilityData.getAge();
-				if (fFertility[currentYear - yearSince] == null) {
-					fFertility[currentYear - yearSince] = new Matrix(maxAge + 1, 1); // 0, 1, ..., MAX_AGE <=> n + 1 values
+				if (fFertility[currentYear] == null) {
+					fFertility[currentYear] = new Matrix(maxAge + 1, 1); // 0, 1, ..., MAX_AGE <=> n + 1 values
 				} 
 				if (currentAge <= maxAge) {
-					fFertility[currentYear - yearSince].set(currentAge, 0, fertilityData.getASFR());
+					fFertility[currentYear].set(currentAge, 0, fertilityData.getASFR());
 				}
 			}
 		}		
