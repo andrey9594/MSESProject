@@ -1,6 +1,9 @@
 package MSES.Project;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -14,33 +17,29 @@ import Jama.Matrix;
 public class Main {
 	private static final Logger log = LoggerFactory.getLogger(Main.class);
 	
+	private static PrintWriter debug = null;
+	
 	private static final String POPULATION_FILE_NAME = "Population.txt";
 	private static final String DEATH_RATES_FILE_NAME = "Death_rates.txt";
 	private static final String FERTILITY_FILE_NAME = "Fertility.txt";
 	private static final String CHILD_BIRTHS_DEATH = "Child_births_death.txt";
 	
-	/**
-	 * Consider ages groups from 0 years to MAX_AGE years old
-	 */
+	/** Consider ages groups from 0 years to MAX_AGE years old */
 	private static final int MAX_AGE = 105;
 	
-	/**
-	 * The part of girl-child birthing
-	 */
+	/** The part of girl-child births */
 	private static final double DELTA = 0.475;
+	
+	/** year -> child births deaths */
+	private static Map <Integer, Double> childBirthsDeath;
 
-	/**
-	 * In our archive we have data for years from YEAR_SINCE to YEAR_TO
-	 */
+	/** In our archive we have data for years from YEAR_SINCE to YEAR_TO */
 	private static final int YEAR_SINCE = 1900;
 	private static final int YEAR_TO = 2010;
-	private static final int YEARS_COUNT = YEAR_TO - YEAR_SINCE + 1;
 	
-	/**
-	 * We will predict population from YEAR_PREDICT_SINCE to YEAR_PREDICT_TO
-	 */
+	/** We will predict population from YEAR_PREDICT_SINCE to YEAR_PREDICT_TO */
 	private static final int YEAR_PREDICT_SINCE = 2000;
-	private static final int YEAR_PREDICT_TO = 2010;
+	private static final int YEAR_PREDICT_TO = 2001;
 	
 	private static int getTotalPopulation(Matrix nf, Matrix nm) {
 		double sum = 0;
@@ -50,12 +49,61 @@ public class Main {
 		}
 		return (int)sum;
 	}
+	
+	private static double getF(boolean female, Matrix [] fFertility, Matrix [] fqx, int yearPredict, int age) {
+		double F = (fFertility[yearPredict].get(age, 0) + (1 - fqx[yearPredict].get(age, 0)) * fFertility[yearPredict].get(age + 1, 0))
+				* (1 - childBirthsDeath.get(yearPredict));
+		if (female)
+			F *= DELTA / 2.;
+		else
+			F *= (1 - DELTA) / 2.;
+		return F; 
+	}
+	
+	
+	private static double predictFertilityForAgeLMA(Matrix [] fFertility, int age, int year) {
+		final int yearSince = 1956;
+		year = 2009;
+		int yearCount = year - yearSince + 1;
+		double y[] = new double[yearCount];
+		
+		debug.println(age);
+		for (int i = 0; i < yearCount; i++) {
+			y[i] = fFertility[yearSince + i].get(age, 0);
+			debug.print(y[i] + " ");
+		}		
+		
+		int n = 10;
+		//int l = 
+		debug.println();// y_{t+1}
+		return 0.0;
+	}
+	
+	private static Matrix getNewFertilityLMA(Matrix [] fFertility, int year) {
+		Matrix newFertility = fFertility[year].copy();
+		for (int currentAge = 12; currentAge <= Math.min(MAX_AGE, 60); currentAge++)
+			newFertility.set(currentAge, 0, predictFertilityForAgeLMA(fFertility, currentAge, year));
+		return newFertility;
+	}
+	
+//	private static Matrix getNewFertilityESS(Matrix [] fFertility, int year) {
+//		Matrix newFertility = fFertility[year].copy();
+//		for (int currentAge = 0; currentAge <= MAX_AGE; currentAge++)
+//			newFertility.set(currentAge, 0, predictFertilityForAge(newFertility, currentAge));
+//		return newFertility;
+//	}
 
 	public static void main(String[] args) {
-		/** nf is the ages distribution vector for female */
-		Matrix nf[] = new Matrix[YEARS_COUNT];
-		/** nm is the ages distribution vector for male */
-		Matrix nm[] = new Matrix[YEARS_COUNT];
+		try {
+			debug = new PrintWriter(new File("debug.out"));
+		} catch (FileNotFoundException e) {
+			log.error("Can't create debug file!", e);
+			e.printStackTrace();
+			return;
+		}
+		
+		Matrix nf[] = new Matrix[YEAR_TO + 1]; // the ages distribution vector for female
+		Matrix nm[] = new Matrix[YEAR_TO + 1]; // the ages distribution vector for male
 		AgeDataReader ageDataReader = null;
 		try {
 			ageDataReader = new AgeDataReader(POPULATION_FILE_NAME);
@@ -69,11 +117,9 @@ public class Main {
 				ageDataReader.close();
 		}
 
-		/**
-		 * deathRates is the ages distribution vector of death for each age
-		 */
-		Matrix fqx[] = new Matrix[YEARS_COUNT];
-		Matrix mqx[] = new Matrix[YEARS_COUNT];
+		/** deathRates is the ages distribution vector of death for each age */
+		Matrix fqx[] = new Matrix[YEAR_TO + 1];
+		Matrix mqx[] = new Matrix[YEAR_TO + 1];
 		DeathDataReader deathDataReader = null;
 		try {
 			deathDataReader = new DeathDataReader(DEATH_RATES_FILE_NAME);
@@ -87,8 +133,8 @@ public class Main {
 				deathDataReader.close();
 		}
 				
-		/** fFertality is the ages distribution vector of fertility for each age for female*/
-		Matrix fFertility[] = new Matrix[YEARS_COUNT];
+		/** fFertality is the ages distribution vector of fertility for each age for female */
+		Matrix fFertility[] = new Matrix[YEAR_TO + 1];
 		FertilityDataReader fertilityDataReader = null;
 		try {
 			fertilityDataReader = new FertilityDataReader(FERTILITY_FILE_NAME);
@@ -102,10 +148,7 @@ public class Main {
 				fertilityDataReader.close();
 		}
 		
-		/**
-		 * Child births death; Map: year -> death value 
-		 */
-		Map <Integer, Double> childBirthsDeath = null;
+		/** Child births death; Map: year -> death value */
 		ChildBirthsDeathReader childBirthsDeathReader = null;
 		try {
 			childBirthsDeathReader = new ChildBirthsDeathReader(CHILD_BIRTHS_DEATH);
@@ -119,43 +162,65 @@ public class Main {
 				childBirthsDeathReader.close();
 		}
 		
-		/** const Lesli matrix */
+		/** initial Lesli matrix */
 		Matrix Lf = new Matrix(MAX_AGE + 1, MAX_AGE + 1);
 		Matrix Lm = new Matrix(MAX_AGE + 1, MAX_AGE + 1);
 		for (int j = 0; j < MAX_AGE; j++) {
-			/**
-			 * fFertility[YEAR_PREDICT_SINCE - YEAR_SINCE].get(j, 0) <-> mx
-			 * fqx[YEAR_PREDICT_SINCE - YEAR_SINCE].get(0, 0) = child mortality for female
-			 */
-			double fF = (DELTA / 2.)
-					* (fFertility[YEAR_PREDICT_SINCE - YEAR_SINCE].get(j, 0)
-							+ (1 - fqx[YEAR_PREDICT_SINCE - YEAR_SINCE].get(j, 0))
-									* fFertility[YEAR_PREDICT_SINCE - YEAR_SINCE].get(j + 1, 0))
-					* (1 - childBirthsDeath.get(YEAR_PREDICT_SINCE));
+			double fF = getF(true, fFertility, fqx, YEAR_PREDICT_SINCE, j);
 			Lf.set(0, j, fF);
-			double mF = ((1 - DELTA) / 2.)
-					* (fFertility[YEAR_PREDICT_SINCE - YEAR_SINCE].get(j, 0)
-							+ (1 - fqx[YEAR_PREDICT_SINCE - YEAR_SINCE].get(j, 0))
-									* fFertility[YEAR_PREDICT_SINCE - YEAR_SINCE].get(j + 1, 0))
-					* (1 - childBirthsDeath.get(YEAR_PREDICT_SINCE));
+			double mF = getF(false, fFertility, fqx, YEAR_PREDICT_SINCE, j);
 			Lm.set(0, j, mF);
 		}
 		for (int i = 1; i <= MAX_AGE; i++) {
-			Lf.set(i, i - 1, 1 - fqx[YEAR_PREDICT_SINCE - YEAR_SINCE].get(i - 1, 0));
-			Lm.set(i, i - 1, 1 - mqx[YEAR_PREDICT_SINCE - YEAR_SINCE].get(i - 1, 0));
+			Lf.set(i, i - 1, 1 - fqx[YEAR_PREDICT_SINCE].get(i - 1, 0));
+			Lm.set(i, i - 1, 1 - mqx[YEAR_PREDICT_SINCE].get(i - 1, 0));
 		}
-		
-		Matrix nfCurrent = nf[YEAR_PREDICT_SINCE - YEAR_SINCE].copy();
-		Matrix nmCurrent = nm[YEAR_PREDICT_SINCE - YEAR_SINCE].copy();
+
+		Matrix nfCurrent = nf[YEAR_PREDICT_SINCE].copy();
+		Matrix nmCurrent = nm[YEAR_PREDICT_SINCE].copy();
+		// const
+		System.out.println("***\n Const Matrix \n***");
 		for (int currentYear = YEAR_PREDICT_SINCE; currentYear < YEAR_PREDICT_TO; currentYear++) {
 			nfCurrent = Lf.times(nfCurrent);
 			nmCurrent = Lm.times(nmCurrent);
-			System.out.println(currentYear
-					+ ": actual = " + getTotalPopulation(nf[currentYear - YEAR_SINCE], nm[currentYear - YEAR_SINCE]) 
-					+ ", predict = " + getTotalPopulation(nfCurrent, nmCurrent));
+			String actualString = Integer.toString(getTotalPopulation(nf[currentYear], nm[currentYear]));
+			actualString = actualString.substring(0, 2) + "." + actualString.substring(2, 5) + "."
+					+ actualString.substring(5);
+			String predictString = Integer.toString(getTotalPopulation(nfCurrent, nmCurrent));
+			predictString = predictString.substring(0, 2) + "." + predictString.substring(2, 5) + "."
+					+ predictString.substring(5);
+			System.out.println(currentYear + ": actual = " + actualString + ", predict = " + predictString);
 		}
-		
-//		for (int year = 2000; year <= 2010; year++)
-//			System.out.println(year + ": " + getTotalPopulation(nf[year - YEAR_SINCE], nm[year - YEAR_SINCE]));
+
+		// predict
+		// Matrix nfCurrent = nf[YEAR_PREDICT_SINCE].copy();
+		//		Matrix nmCurrent = nm[YEAR_PREDICT_SINCE].copy();
+		System.out.println("***\n Not const Matrix \n***");
+		nfCurrent = nf[YEAR_PREDICT_SINCE].copy();
+		nmCurrent = nm[YEAR_PREDICT_SINCE].copy();
+		for (int currentYear = YEAR_PREDICT_SINCE; currentYear < YEAR_PREDICT_TO; currentYear++) {
+			for (int i = 1; i <= MAX_AGE; i++) {
+				Lf.set(i, i - 1, 1 - fqx[currentYear].get(i - 1, 0));
+				Lm.set(i, i - 1, 1 - mqx[currentYear].get(i - 1, 0));
+			}
+			fFertility[currentYear] = getNewFertilityLMA(fFertility, currentYear);
+			for (int j = 0; j < MAX_AGE; j++) {
+				double fF = getF(true, fFertility, fqx, currentYear, j);
+				Lf.set(0, j, fF);
+				double mF = getF(false, fFertility, fqx, currentYear, j);
+				Lm.set(0, j, mF);
+			}
+			nfCurrent = Lf.times(nfCurrent);
+			nmCurrent = Lm.times(nmCurrent);
+			String actualString = Integer.toString(getTotalPopulation(nf[currentYear], nm[currentYear]));
+			actualString = actualString.substring(0, 2) + "." + actualString.substring(2, 5) + "."
+					+ actualString.substring(5);
+			String predictString = Integer.toString(getTotalPopulation(nfCurrent, nmCurrent));
+			predictString = predictString.substring(0, 2) + "." + predictString.substring(2, 5) + "."
+					+ predictString.substring(5);
+			System.out.println(currentYear + ": actual = " + actualString + ", predict = " + predictString);
+		}
+		debug.flush();
+		debug.close();
 	}
 }
