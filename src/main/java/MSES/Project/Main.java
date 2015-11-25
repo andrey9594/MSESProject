@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.EmptyStackException;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -32,13 +33,20 @@ public class Main {
 	
 	/** year -> child births deaths */
 	private static Map <Integer, Double> childBirthsDeath;
+	
+	/** emmigration: from 2004 to 2013 */
+	private static final int emmigration[] = {444_566, 325_673, 297_640, 558_019, 534_712, 
+			                                  442_940, 458_856, 385_793, 350_772, 307_454};
+	
+	/** Population since 2010; data from wiki */
+	private static final int population[] = {};
 
 	/** In our archive we have data for years from YEAR_SINCE to YEAR_TO */
-	private static final int YEAR_SINCE = 1900;
+	private static final int YEAR_SINCE = 1950;
 	private static final int YEAR_TO = 2010;
 	
 	/** We will predict population from YEAR_PREDICT_SINCE to YEAR_PREDICT_TO */
-	private static final int YEAR_PREDICT_SINCE = 2000;
+	private static final int YEAR_PREDICT_SINCE = 2004;	
 	private static final int YEAR_PREDICT_TO = 2010;
 	
 	private static int getTotalPopulation(Matrix nf, Matrix nm) {
@@ -107,12 +115,49 @@ public class Main {
 		return newFertility;
 	}
 	
-//	private static Matrix getNewFertilityESS(Matrix [] fFertility, int year) {
-//		Matrix newFertility = fFertility[year].copy();
-//		for (int currentAge = 0; currentAge <= MAX_AGE; currentAge++)
-//			newFertility.set(currentAge, 0, predictFertilityForAge(newFertility, currentAge));
-//		return newFertility;
-//	}
+	private static double predictMortalityForAgeLMA(Matrix [] qx, int age, int year) {
+		final int yearSince = 1990;
+		int yearCount = year - yearSince + 1;
+		double y[] = new double[yearCount];
+
+		for (int i = 0; i < yearCount; i++) {
+			y[i] = qx[yearSince + i].get(age, 0);
+		}		
+		
+		int n = 5;
+		int l = year - (yearSince + n - 1) + 1;
+		Matrix F = new Matrix(l, n);
+		for (int j = 0; j < n; j++) {
+			int currentYear = year - j;
+			for (int i = 0; i < l; i++) {
+				F.set(i, j, qx[currentYear--].get(age, 0));
+			}
+		}
+		
+		Matrix Y = new Matrix(l, 1);
+		for (int i = 0; i < l; i++)
+			Y.set(i, 0, qx[year - i].get(age, 0));
+		
+		Matrix W = (F.transpose().times(F)).inverse().times(F.transpose()).times(Y);
+		
+		double newY = 0;
+		for (int i = 0; i < n; i++)
+			newY += W.get(i, 0) * qx[year - i - 1].get(age, 0);
+		debug.print("age = " + age + ": last 3 = " + qx[year - 3].get(age, 0) + ", " +
+			 qx[year - 2].get(age, 0) + ", " + + qx[year - 1].get(age, 0) + ", ");
+		debug.printf("new y = %f", newY);// y_{t+1}
+		debug.print(", real y = " + qx[year].get(age, 0));// y_{t+1}
+		debug.printf(", error = %f\n", Math.abs(newY - qx[year].get(age, 0)));
+		return newY;
+	}
+	
+	private static Matrix getNewQX(Matrix [] qx, int year) {
+		Matrix newQx = qx[year].copy();
+		for (int currentAge = 0; currentAge <= MAX_AGE; currentAge++) {
+			newQx.set(currentAge, 0, predictMortalityForAgeLMA(qx, currentAge, year));
+		}
+		return newQx;
+	}
 
 	public static void main(String[] args) {
 		try {
@@ -199,31 +244,39 @@ public class Main {
 
 		Matrix nfCurrent = nf[YEAR_PREDICT_SINCE].copy();
 		Matrix nmCurrent = nm[YEAR_PREDICT_SINCE].copy();
-		// const
-		System.out.println("***\n Const Matrix \n***");
-		for (int currentYear = YEAR_PREDICT_SINCE; currentYear < YEAR_PREDICT_TO; currentYear++) {
-			nfCurrent = Lf.times(nfCurrent);
-			nmCurrent = Lm.times(nmCurrent);
-			String actualString = Integer.toString(getTotalPopulation(nf[currentYear], nm[currentYear]));
-			actualString = actualString.substring(0, 2) + "." + actualString.substring(2, 5) + "."
-					+ actualString.substring(5);
-			String predictString = Integer.toString(getTotalPopulation(nfCurrent, nmCurrent));
-			predictString = predictString.substring(0, 2) + "." + predictString.substring(2, 5) + "."
-					+ predictString.substring(5);
-			System.out.println(currentYear + ": actual = " + actualString + ", predict = " + predictString);
-		}
+//		// const
+//		System.out.println("***\n Const Matrix \n***");
+//		for (int currentYear = YEAR_PREDICT_SINCE; currentYear < YEAR_PREDICT_TO; currentYear++) {
+//			nfCurrent = Lf.times(nfCurrent);
+//			nmCurrent = Lm.times(nmCurrent);
+//			String actualString = Integer.toString(getTotalPopulation(nf[currentYear], nm[currentYear]));
+//			actualString = actualString.substring(0, 2) + "." + actualString.substring(2, 5) + "."
+//					+ actualString.substring(5);
+//			String predictString = Integer.toString(getTotalPopulation(nfCurrent, nmCurrent));
+//			predictString = predictString.substring(0, 2) + "." + predictString.substring(2, 5) + "."
+//					+ predictString.substring(5);
+//			System.out.println(currentYear + ": actual = " + actualString + ", predict = " + predictString);
+//		}
 
 		// predict
 		// Matrix nfCurrent = nf[YEAR_PREDICT_SINCE].copy();
 		//		Matrix nmCurrent = nm[YEAR_PREDICT_SINCE].copy();
 		System.out.println("***\n Not const Matrix \n***");
+		String actualStringBefore = Integer.toString(getTotalPopulation(nf[YEAR_PREDICT_SINCE - 1], nm[YEAR_PREDICT_SINCE - 1]));
+		actualStringBefore = actualStringBefore.substring(0, 2) + "." + actualStringBefore.substring(2, 5) + "."
+				+ actualStringBefore.substring(5);
+		System.out.println("The population was " + actualStringBefore);
+		int emmigrationSum = 0;
 		nfCurrent = nf[YEAR_PREDICT_SINCE].copy();
 		nmCurrent = nm[YEAR_PREDICT_SINCE].copy();
 		for (int currentYear = YEAR_PREDICT_SINCE; currentYear < YEAR_PREDICT_TO; currentYear++) {
 			for (int i = 1; i <= MAX_AGE; i++) {
+				fqx[currentYear] = getNewQX(fqx, currentYear);
+				mqx[currentYear] = getNewQX(mqx, currentYear);
 				Lf.set(i, i - 1, 1 - fqx[currentYear].get(i - 1, 0));
 				Lm.set(i, i - 1, 1 - mqx[currentYear].get(i - 1, 0));
 			}
+			emmigrationSum += emmigration[currentYear - YEAR_PREDICT_SINCE];
 			fFertility[currentYear] = getNewFertilityLMA(fFertility, currentYear);
 			for (int j = 0; j < MAX_AGE; j++) {
 				double fF = getF(true, fFertility, fqx, currentYear, j);
@@ -236,7 +289,7 @@ public class Main {
 			String actualString = Integer.toString(getTotalPopulation(nf[currentYear], nm[currentYear]));
 			actualString = actualString.substring(0, 2) + "." + actualString.substring(2, 5) + "."
 					+ actualString.substring(5);
-			String predictString = Integer.toString(getTotalPopulation(nfCurrent, nmCurrent));
+			String predictString = Integer.toString(getTotalPopulation(nfCurrent, nmCurrent) + emmigrationSum);
 			predictString = predictString.substring(0, 2) + "." + predictString.substring(2, 5) + "."
 					+ predictString.substring(5);
 			System.out.println(currentYear + ": actual = " + actualString + ", predict = " + predictString);
