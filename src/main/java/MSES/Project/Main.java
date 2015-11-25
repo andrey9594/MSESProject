@@ -179,7 +179,7 @@ public class Main {
 			e.printStackTrace();
 			return;
 		} finally {
-			if (childBirthsDeath != null)
+			if (childBirthsDeathReader != null)
 				childBirthsDeathReader.close();
 		}
 		
